@@ -118,11 +118,21 @@ docker compose -f deploy/docker-compose.yml down
 
 ### 清空本地数据库重新开始
 
-先停服务，再删除数据库文件：
+先在**项目根目录**停服务，再删除宿主机上的数据库文件（路径相对仓库根：`deploy/data/gateway.db`），然后重新启动。若文件尚不存在（从未成功跑通过），删除步骤可省略。
+
+PowerShell：
 
 ```powershell
 docker compose -f deploy/docker-compose.yml down
-Remove-Item deploy/data/gateway.db
+Remove-Item -ErrorAction SilentlyContinue deploy/data/gateway.db
+docker compose -f deploy/docker-compose.yml up -d --build
+```
+
+Bash（Git Bash / WSL / Linux / macOS）：
+
+```bash
+docker compose -f deploy/docker-compose.yml down
+rm -f deploy/data/gateway.db
 docker compose -f deploy/docker-compose.yml up -d --build
 ```
 
