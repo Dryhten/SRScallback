@@ -1,0 +1,33 @@
+services:
+  srs-callback-gateway:
+    build:
+      context: ../gateway
+    container_name: srs-callback-gateway
+    environment:
+      DB_PATH: /data/gateway.db
+      ADMIN_TOKEN: ${SRS_GATEWAY_ADMIN_TOKEN:-}
+      ALLOW_PRIVATE_TARGETS: "true"
+      DELIVERY_POLL_INTERVAL_MS: "1500"
+      DOWNSTREAM_PAYLOAD_MODE: "raw"
+    ports:
+      - "13010:13000"
+    volumes:
+      - ./data:/data
+    restart: always
+
+  srs:
+    image: ossrs/srs:6
+    container_name: srs
+    env_file:
+      - path: .env.shared
+        required: false
+    ports:
+      - "1935:1935"
+      - "1985:1985"
+      - "8080:8080"
+      - "8000:8000/udp"
+    volumes:
+      - ./srs.conf:/usr/local/srs/conf/srs.conf
+    command: ["./objs/srs", "-c", "conf/srs.conf"]
+    restart: always
+

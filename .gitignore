@@ -1,0 +1,12 @@
+.venv*/
+.py312pkgs/
+.tmp/
+.pytest_cache/
+.pytest-tmp/
+pytest-cache-files-*/
+.qodo/
+__pycache__/
+*.py[cod]
+
+# Runtime data
+deploy/data/

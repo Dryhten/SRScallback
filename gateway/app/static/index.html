@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SRS Callback Gateway</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div>
+        <p class="eyebrow">Internal Console</p>
+        <h1>SRS Callback Gateway</h1>
+        <p class="muted">内部轻量运维台，管理路由规则和异步投递状态。</p>
+      </div>
+      <div class="token-card">
+        <label for="adminToken">Bearer Token</label>
+        <input id="adminToken" type="password" placeholder="如已配置 ADMIN_TOKEN，请填入">
+        <button id="saveTokenButton" class="secondary">保存 Token</button>
+      </div>
+      <nav class="tabs">
+        <button data-view="routes" class="active">路由规则</button>
+        <button data-view="deliveries">投递记录</button>
+        <button data-view="failures">失败记录</button>
+      </nav>
+    </aside>
+    <main class="content">
+      <section id="routesView" class="panel active">
+        <div class="panel-header">
+          <div>
+            <h2>路由规则</h2>
+            <p>支持按 vhost / app / stream / eventType 分发到多个下游。</p>
+          </div>
+          <button id="newRouteButton">新建规则</button>
+        </div>
+        <div id="routeFormContainer" class="card hidden"></div>
+        <div id="routesTable" class="table-card"></div>
+      </section>
+      <section id="deliveriesView" class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>投递记录</h2>
+            <p>查看成功、重试中和失败的投递任务。</p>
+          </div>
+          <select id="deliveryStatusFilter">
+            <option value="">全部状态</option>
+            <option value="pending">待处理</option>
+            <option value="retrying">重试中</option>
+            <option value="processing">处理中</option>
+            <option value="succeeded">成功</option>
+            <option value="failed">失败</option>
+          </select>
+        </div>
+        <div id="deliveriesTable" class="table-card"></div>
+      </section>
+      <section id="failuresView" class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>失败记录</h2>
+            <p>聚焦最终失败的任务，用于排查超时、鉴权和地址错误。</p>
+          </div>
+        </div>
+        <div id="failuresTable" class="table-card"></div>
+      </section>
+    </main>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
