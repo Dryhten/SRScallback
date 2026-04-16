@@ -9,6 +9,8 @@ import httpx
 from fastapi import Depends, FastAPI, HTTPException, Response, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 
 from .auth import require_admin, validate_admin_credentials
 from .config import settings
@@ -28,6 +30,25 @@ from .services import deliver_due_items, normalize_hook_payload, validate_target
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
+
+
+class BrowserCacheHeadersMiddleware(BaseHTTPMiddleware):
+    """避免浏览器长期缓存前台页面与 /static，本地改 JS/CSS 后无需强刷。"""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        path = request.url.path
+        if path.startswith("/api/"):
+            return response
+        if not (path.startswith("/static/") or path in ("/", "/login", "/admin")):
+            return response
+        max_age = settings.static_cache_max_age
+        if max_age > 0:
+            response.headers["Cache-Control"] = f"public, max-age={max_age}"
+        else:
+            response.headers["Cache-Control"] = "no-store, max-age=0, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+        return response
 
 
 @asynccontextmanager
@@ -53,6 +74,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
+app.add_middleware(BrowserCacheHeadersMiddleware)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 

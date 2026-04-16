@@ -24,12 +24,17 @@ class Settings:
     allow_private_targets: bool = os.getenv("ALLOW_PRIVATE_TARGETS", "true").lower() == "true"
     seed_demo_route: bool = os.getenv("SEED_DEMO_ROUTE", "false").lower() == "true"
 
+    # 静态资源与前台 HTML 的 Cache-Control：默认 0 表示不缓存，改前端后刷新即可生效。
+    # 生产可对 /static 设长缓存：STATIC_CACHE_MAX_AGE=86400
+    static_cache_max_age: int = 0
+
     def __post_init__(self) -> None:
         self.allowed_target_hosts = _split_csv(os.getenv("ALLOWED_TARGET_HOSTS", ""))
         if self.downstream_payload_mode not in {"raw", "extended"}:
             self.downstream_payload_mode = "raw"
         if not self.db_path.is_absolute():
             self.db_path = Path.cwd() / self.db_path
+        self.static_cache_max_age = max(0, int(os.getenv("STATIC_CACHE_MAX_AGE", "0")))
 
     @property
     def admin_auth_enabled(self) -> bool:
