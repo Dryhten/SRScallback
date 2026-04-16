@@ -7,38 +7,41 @@
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <div class="shell logged-out" id="adminShell">
+  <div class="shell" id="adminShell">
     <aside class="sidebar">
-      <div>
+      <div class="brand-block">
         <p class="eyebrow">Internal Console</p>
         <h1>SRS Callback Gateway</h1>
         <p class="muted">内部轻量运维台，管理路由规则和异步投递状态。</p>
       </div>
-      <div class="token-card">
-        <label for="adminUsername">账号</label>
-        <input id="adminUsername" value="admin" autocomplete="username">
-        <label for="adminPassword">密码</label>
-        <input id="adminPassword" type="password" placeholder="请输入管理密码" autocomplete="current-password">
-        <div class="compact-actions">
-          <button id="loginButton" class="secondary">登录</button>
-          <button id="logoutButton" class="secondary" type="button">退出</button>
+      <div class="token-card auth-card">
+        <div class="auth-card-copy">
+          <p class="auth-kicker">Admin Session</p>
+          <h2>管理控制台</h2>
         </div>
-        <small id="loginStatus" class="muted">登录后可管理路由和投递记录。</small>
+        <div id="sessionPanel" class="session-panel">
+          <div class="session-meta">
+            <p class="session-label">当前会话</p>
+            <strong id="sessionUsername">admin</strong>
+            <span class="session-note">已通过管理员身份登录</span>
+          </div>
+          <button type="button" id="logoutButton" class="session-logout">退出登录</button>
+        </div>
       </div>
-      <nav class="tabs" id="adminTabs">
+      <nav class="tabs">
         <button data-view="routes" class="active">路由规则</button>
         <button data-view="deliveries">投递记录</button>
         <button data-view="failures">失败记录</button>
       </nav>
     </aside>
-    <main class="content" id="adminContent">
+    <main class="content">
       <section id="routesView" class="panel active">
         <div class="panel-header">
           <div>
             <h2>路由规则</h2>
-            <p>支持按 vhost / app / stream / eventType 分发到多个下游。</p>
+            <p>按 vhost、app、stream 与事件类型匹配；<strong>priority 数值越大越优先</strong>（同事件可多规则）。匹配成功后向目标 URL 投递 JSON。</p>
           </div>
-          <button id="newRouteButton">新建规则</button>
+          <button type="button" id="newRouteButton">新建规则</button>
         </div>
         <div id="routeFormContainer" class="card hidden"></div>
         <div id="routesTable" class="table-card"></div>
@@ -47,7 +50,7 @@
         <div class="panel-header">
           <div>
             <h2>投递记录</h2>
-            <p>查看成功、重试中和失败的投递任务。</p>
+            <p>查看各状态下的投递快照；需要<strong>重新入队</strong>时请到「失败记录」页操作。</p>
           </div>
           <select id="deliveryStatusFilter">
             <option value="">全部状态</option>
@@ -64,7 +67,7 @@
         <div class="panel-header">
           <div>
             <h2>失败记录</h2>
-            <p>聚焦最终失败的任务，用于排查超时、鉴权和地址错误。</p>
+            <p>仅展示状态为「失败」的投递；列表样式与投递记录一致。「操作」中的 <strong>重新入队</strong> 会调用后端接口，将任务重新加入队列。</p>
           </div>
         </div>
         <div id="failuresTable" class="table-card"></div>
