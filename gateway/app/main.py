@@ -7,7 +7,7 @@ from pathlib import Path
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Response, status
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -30,6 +30,30 @@ from .services import deliver_due_items, normalize_hook_payload, validate_target
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
+
+_STATIC_FOR_VERSION = (
+    "index.html",
+    "login.html",
+    "app.js",
+    "login.js",
+    "styles.css",
+)
+
+
+def static_asset_version() -> str:
+    """取关键静态文件的最新 mtime，作为 ?v=。内容一变即变，强制浏览器拉取新 JS/CSS。"""
+    mtimes: list[float] = []
+    for name in _STATIC_FOR_VERSION:
+        p = STATIC_DIR / name
+        if p.is_file():
+            mtimes.append(p.stat().st_mtime)
+    return str(int(max(mtimes))) if mtimes else "0"
+
+
+def html_page(filename: str) -> HTMLResponse:
+    path = STATIC_DIR / filename
+    body = path.read_text(encoding="utf-8").replace("{{STATIC_V}}", static_asset_version())
+    return HTMLResponse(content=body)
 
 
 class BrowserCacheHeadersMiddleware(BaseHTTPMiddleware):
@@ -79,18 +103,18 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 @app.get("/", include_in_schema=False)
-def root() -> FileResponse:
-    return FileResponse(STATIC_DIR / "login.html")
+def root() -> HTMLResponse:
+    return html_page("login.html")
 
 
 @app.get("/login", include_in_schema=False)
-def login_page() -> FileResponse:
-    return FileResponse(STATIC_DIR / "login.html")
+def login_page() -> HTMLResponse:
+    return html_page("login.html")
 
 
 @app.get("/admin", include_in_schema=False)
-def admin_page() -> FileResponse:
-    return FileResponse(STATIC_DIR / "index.html")
+def admin_page() -> HTMLResponse:
+    return html_page("index.html")
 
 
 @app.post("/api/srs/hook", response_model=HookAcceptedResponse)
