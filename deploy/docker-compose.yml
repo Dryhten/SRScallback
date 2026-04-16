@@ -1,3 +1,5 @@
+name: srs-callback
+
 services:
   srs-callback-gateway:
     build:

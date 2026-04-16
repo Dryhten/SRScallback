@@ -12,6 +12,8 @@ def build_client(tmp_path: Path):
 
     config.settings.db_path = db_file
     config.settings.admin_token = "secret-token"
+    config.settings.admin_username = "admin"
+    config.settings.admin_password = "mozhishijie@123"
     config.settings.seed_demo_route = False
 
     import gateway.app.database as database
@@ -79,4 +81,26 @@ def test_route_crud_and_hook_queue(tmp_path: Path):
 def test_admin_token_is_required(tmp_path: Path):
     with build_client(tmp_path) as client:
         response = client.get("/api/routes")
+        assert response.status_code == 401
+
+
+def test_admin_login_returns_bearer_token(tmp_path: Path):
+    with build_client(tmp_path) as client:
+        response = client.post(
+            "/api/admin/login",
+            json={"username": "admin", "password": "mozhishijie@123"},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["token"] == "secret-token"
+        assert body["tokenType"] == "Bearer"
+        assert body["username"] == "admin"
+
+
+def test_admin_login_rejects_invalid_password(tmp_path: Path):
+    with build_client(tmp_path) as client:
+        response = client.post(
+            "/api/admin/login",
+            json={"username": "admin", "password": "wrong-password"},
+        )
         assert response.status_code == 401

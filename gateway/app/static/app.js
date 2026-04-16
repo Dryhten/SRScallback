@@ -11,12 +11,43 @@ const views = {
   failures: document.getElementById("failuresView"),
 };
 
-const tokenInput = document.getElementById("adminToken");
-tokenInput.value = localStorage.getItem("adminToken") || "";
+const usernameInput = document.getElementById("adminUsername");
+const passwordInput = document.getElementById("adminPassword");
+const loginStatus = document.getElementById("loginStatus");
+const adminShell = document.getElementById("adminShell");
+let adminToken = localStorage.getItem("adminToken") || "";
+usernameInput.value = localStorage.getItem("adminUsername") || "admin";
 
-document.getElementById("saveTokenButton").addEventListener("click", () => {
-  localStorage.setItem("adminToken", tokenInput.value.trim());
-  refreshAll();
+document.getElementById("loginButton").addEventListener("click", async () => {
+  try {
+    const response = await api("/api/admin/login", {
+      method: "POST",
+      skipAuth: true,
+      body: JSON.stringify({
+        username: usernameInput.value.trim(),
+        password: passwordInput.value,
+      }),
+    });
+    adminToken = response.token;
+    localStorage.setItem("adminToken", adminToken);
+    localStorage.setItem("adminUsername", response.username);
+    passwordInput.value = "";
+    loginStatus.textContent = `已登录账号：${response.username}`;
+    setLoggedInState(true);
+    await refreshAll();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    loginStatus.textContent = `登录失败：${message}`;
+  }
+});
+
+document.getElementById("logoutButton").addEventListener("click", () => {
+  adminToken = "";
+  localStorage.removeItem("adminToken");
+  passwordInput.value = "";
+  loginStatus.textContent = "已退出登录。";
+  setLoggedInState(false);
+  renderLoggedOutState();
 });
 
 document.querySelectorAll(".tabs button").forEach((button) => {
@@ -36,15 +67,14 @@ document.getElementById("newRouteButton").addEventListener("click", () => {
 document.getElementById("deliveryStatusFilter").addEventListener("change", refreshDeliveries);
 
 function authHeaders() {
-  const token = tokenInput.value.trim();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  return adminToken ? { Authorization: `Bearer ${adminToken}` } : {};
 }
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders(),
+      ...(options.skipAuth ? {} : authHeaders()),
       ...(options.headers || {}),
     },
     ...options,
@@ -57,6 +87,17 @@ async function api(path, options = {}) {
     return null;
   }
   return response.json();
+}
+
+function renderLoggedOutState(message = "请先登录后再查看管理数据。") {
+  const card = `<div class="card">${escapeHtml(message)}</div>`;
+  document.getElementById("routesTable").innerHTML = card;
+  document.getElementById("deliveriesTable").innerHTML = card;
+  document.getElementById("failuresTable").innerHTML = card;
+}
+
+function setLoggedInState(isLoggedIn) {
+  adminShell.classList.toggle("logged-out", !isLoggedIn);
 }
 
 function escapeHtml(value) {
@@ -326,10 +367,27 @@ async function refreshDeliveries() {
 }
 
 async function refreshAll() {
+  if (!adminToken) {
+    loginStatus.textContent = "请使用 admin 账号登录。";
+    setLoggedInState(false);
+    renderLoggedOutState();
+    return;
+  }
   try {
     await Promise.all([refreshRoutes(), refreshDeliveries()]);
+    const storedName = localStorage.getItem("adminUsername") || "admin";
+    loginStatus.textContent = `已登录账号：${storedName}`;
+    setLoggedInState(true);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("401")) {
+      adminToken = "";
+      localStorage.removeItem("adminToken");
+      loginStatus.textContent = "登录已失效，请重新登录。";
+      setLoggedInState(false);
+      renderLoggedOutState("登录已失效，请重新登录。");
+      return;
+    }
     document.getElementById("routesTable").innerHTML = `<div class="card">加载失败：${escapeHtml(message)}</div>`;
     document.getElementById("deliveriesTable").innerHTML = `<div class="card">加载失败：${escapeHtml(message)}</div>`;
     document.getElementById("failuresTable").innerHTML = `<div class="card">加载失败：${escapeHtml(message)}</div>`;

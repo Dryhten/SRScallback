@@ -10,10 +10,19 @@ from fastapi import Depends, FastAPI, HTTPException, Response, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .auth import require_admin
+from .auth import require_admin, validate_admin_credentials
 from .config import settings
 from .database import db
-from .schemas import DeliveryRetryResponse, HookAcceptedResponse, HookPayload, RouteCreate, RouteRecord, RouteUpdate
+from .schemas import (
+    AdminLoginRequest,
+    AdminLoginResponse,
+    DeliveryRetryResponse,
+    HookAcceptedResponse,
+    HookPayload,
+    RouteCreate,
+    RouteRecord,
+    RouteUpdate,
+)
 from .services import deliver_due_items, normalize_hook_payload, validate_target_url
 
 
@@ -73,6 +82,17 @@ def ingest_hook(payload: HookPayload) -> HookAcceptedResponse:
         matchedRouteIds=[route.id for route in routes],
         queuedDeliveries=len(deliveries),
     )
+
+
+@app.post("/api/admin/login", response_model=AdminLoginResponse)
+def admin_login(payload: AdminLoginRequest) -> AdminLoginResponse:
+    if not validate_admin_credentials(payload.username, payload.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="invalid username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return AdminLoginResponse(token=settings.effective_admin_token, username=settings.admin_username)
 
 
 @app.get("/api/routes", dependencies=[Depends(require_admin)])

@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <div class="shell">
+  <div class="shell logged-out" id="adminShell">
     <aside class="sidebar">
       <div>
         <p class="eyebrow">Internal Console</p>
@@ -15,17 +15,23 @@
         <p class="muted">内部轻量运维台，管理路由规则和异步投递状态。</p>
       </div>
       <div class="token-card">
-        <label for="adminToken">Bearer Token</label>
-        <input id="adminToken" type="password" placeholder="如已配置 ADMIN_TOKEN，请填入">
-        <button id="saveTokenButton" class="secondary">保存 Token</button>
+        <label for="adminUsername">账号</label>
+        <input id="adminUsername" value="admin" autocomplete="username">
+        <label for="adminPassword">密码</label>
+        <input id="adminPassword" type="password" placeholder="请输入管理密码" autocomplete="current-password">
+        <div class="compact-actions">
+          <button id="loginButton" class="secondary">登录</button>
+          <button id="logoutButton" class="secondary" type="button">退出</button>
+        </div>
+        <small id="loginStatus" class="muted">登录后可管理路由和投递记录。</small>
       </div>
-      <nav class="tabs">
+      <nav class="tabs" id="adminTabs">
         <button data-view="routes" class="active">路由规则</button>
         <button data-view="deliveries">投递记录</button>
         <button data-view="failures">失败记录</button>
       </nav>
     </aside>
-    <main class="content">
+    <main class="content" id="adminContent">
       <section id="routesView" class="panel active">
         <div class="panel-header">
           <div>

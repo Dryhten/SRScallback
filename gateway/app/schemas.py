@@ -126,6 +126,17 @@ class DeliveryRetryResponse(BaseModel):
     status: str
 
 
+class AdminLoginRequest(BaseModel):
+    username: str = Field(min_length=1, max_length=120)
+    password: str = Field(min_length=1, max_length=200)
+
+
+class AdminLoginResponse(BaseModel):
+    token: str
+    tokenType: str = "Bearer"
+    username: str
+
+
 class HookAcceptedResponse(BaseModel):
     code: int = 0
     eventId: str
